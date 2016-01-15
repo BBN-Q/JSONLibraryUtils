@@ -1,3 +1,10 @@
+'''
+Provides automatic migration of JSON files when the underlying "shema" changes.
+
+Copyright 2016 Raytheon BBN Technologies
+
+Original author: Brian Donovan
+'''
 
 import config
 import json

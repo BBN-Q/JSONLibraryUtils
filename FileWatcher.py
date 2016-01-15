@@ -1,3 +1,9 @@
+'''
+A thin wrapper around watchdog file watchers to fix OS compatibility issues.
+
+Copyright 2016 Raytheon BBN Technologies
+'''
+
 import sys
 
 # FSEvents observer in watchdog cannot have multiple watchers of the same path

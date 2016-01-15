@@ -1,3 +1,9 @@
+'''
+JSON encoders and decoders.
+
+Copyright 2016 Raytheon BBN Technologies
+'''
+
 import json, sys
 
 from atom.api import Atom
