@@ -60,7 +60,7 @@ class JSONMigrator(object):
 
 	def json_input_validate(self):
 		if not self.is_class(self.jsonDict, self.libraryClass) or self.primaryKey  not in self.jsonDict:
-			print "Error json file is not a " + self.libraryClass
+			print("Error json file is not a " + self.libraryClass)
 			return False
 		return True
 
@@ -166,10 +166,10 @@ class ChannelMigrator(JSONMigrator):
 		for lc in logicalChannels:
 			pc = self.primaryDict[lc]['physChan']
 			if pc not in self.primaryDict:
-				print 'Error: Physical Channel {0} not found.'.format(pc)
+				print('Error: Physical Channel {0} not found.'.format(pc))
 				continue
 			if 'SSBFreq' not in self.primaryDict[pc]:
-				print "Warning: did not find SSBFreq for PhysicalChannel: ", pc
+				print("Warning: did not find SSBFreq for PhysicalChannel: {0}".format(pc))
 				continue
 			frequency = self.primaryDict[pc]['SSBFreq']
 			self.primaryDict[lc]['frequency'] = frequency
@@ -193,7 +193,7 @@ class ChannelMigrator(JSONMigrator):
 					continue
 			self.primaryDict[mc]['trigChan'] = 'digitizerTrig'
 
-class SweepMigrator(JSONMigrator):		
+class SweepMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
 
 	def __init__(self):
