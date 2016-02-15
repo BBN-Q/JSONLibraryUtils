@@ -6,7 +6,6 @@ Copyright 2016 Raytheon BBN Technologies
 Original author: Brian Donovan
 '''
 
-import config
 import json
 import itertools
 
@@ -112,9 +111,9 @@ class JSONMigrator(object):
 
 class IntrumentMigrator(JSONMigrator):
 	""" Migrator for the Intrument Manager JSON File """
-	def __init__(self):
+	def __init__(self, filename):
 		super(IntrumentMigrator, self).__init__(
-			config.instrumentLibFile,
+			filename,
 			"InstrumentLibrary",
 			"instrDict",
 			3)
@@ -145,9 +144,9 @@ class IntrumentMigrator(JSONMigrator):
 
 class ChannelMigrator(JSONMigrator):
 	""" Migrator for the Channel Manager JSON File """
-	def __init__(self):
+	def __init__(self, filename):
 		super(ChannelMigrator, self).__init__(
-			config.channelLibFile,
+			filename,
 			'ChannelLibrary',
 			'channelDict',
 			4)
@@ -204,9 +203,9 @@ class ChannelMigrator(JSONMigrator):
 class SweepMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
 
-	def __init__(self):
+	def __init__(self, filename):
 		super(SweepMigrator, self).__init__(
-			config.sweepLibFile,
+			filename,
 			"SweepLibrary",
 			"sweepDict",
 			1)
@@ -214,22 +213,26 @@ class SweepMigrator(JSONMigrator):
 class MeasurementMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
 
-	def __init__(self):
+	def __init__(self, filename):
 		super(MeasurementMigrator, self).__init__(
-			config.measurementLibFile,
+			filename,
 			"MeasFilterLibrary",
 			"filterDict",
 			1)
 
-def migrate_all():
+def migrate_all(config):
 	migrators = [IntrumentMigrator,
 	             ChannelMigrator,
 	             SweepMigrator,
 	             MeasurementMigrator]
+	configFiles = [config.instrumentLibFile,
+	               config.channelLibFile,
+				   config.sweepLibFile,
+				   config.measurementLibFile]
 	messages = []
 
-	for migrator in migrators:
-		m = migrator()
+	for migrator, filename in zip(migrators, configFiles):
+		m = migrator(filename)
 		msg = m.migrate()
 		messages.append(msg)
 	return list(itertools.chain(*messages))
