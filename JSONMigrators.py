@@ -60,23 +60,23 @@ class JSONMigrator(object):
 
 	def json_input_validate(self):
 		if not self.is_class(self.jsonDict, self.libraryClass) or self.primaryKey  not in self.jsonDict:
-			print("Error json file is not a " + self.libraryClass)
+			print("Error json file is not a {0}".format(self.libraryClass))
 			return False
 		return True
 
-	def is_class(self, dict, searchClasses):
+	def is_class(self, jsonDict, searchClasses):
 
 		if type(searchClasses) == type(''):
 			searchClasses = [searchClasses]
 
-		if type(dict) != type({}):
+		if type(jsonDict) != type({}):
 			return False
 
-		if 'x__class__' not in dict.keys():
+		if 'x__class__' not in jsonDict.keys():
 			return False
 
 		for className in searchClasses:
-			if dict['x__class__'] == className:
+			if jsonDict['x__class__'] == className:
 				return True
 
 		return False
@@ -150,7 +150,7 @@ class ChannelMigrator(JSONMigrator):
 			config.channelLibFile,
 			'ChannelLibrary',
 			'channelDict',
-			3)
+			4)
 
 	def version_1_to_2(self):
 
@@ -192,6 +192,14 @@ class ChannelMigrator(JSONMigrator):
 				if self.primaryDict[mc]['trigChan'] != '':
 					continue
 			self.primaryDict[mc]['trigChan'] = 'digitizerTrig'
+
+	def version_3_to_4(self):
+		self.jsonDict['x__module__'] = 'QGL.ChannelLibrary'
+		print("""
+	PhysicalChannels have a new 'translator' attribute which must be updated for
+	compile_to_hardware to work. The easiest way to do this is to launch the
+	settings GUI and simply click apply/save.
+""")
 
 class SweepMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
