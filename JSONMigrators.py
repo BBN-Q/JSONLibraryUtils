@@ -196,9 +196,25 @@ class ChannelMigrator(JSONMigrator):
 		self.jsonDict['x__module__'] = 'QGL.ChannelLibrary'
 		print("""
 	PhysicalChannels have a new 'translator' attribute which must be updated for
-	compile_to_hardware to work. The easiest way to do this is to launch the
-	settings GUI and simply click apply/save.
+	compile_to_hardware to work. Please choose the instrument type for the
+	following AWGs.
 """)
+		AWGs = set()
+		physChans = self.get_items_matching_class(['PhysicalQuadratureChannel', 'PhysicalMarkerChannel'])
+		for name in physChans:
+			ch = self.primaryDict[name]
+			if ch['AWG']:
+				AWGs.add(ch['AWG'])
+		awgmap = {}
+		for awg in AWGs:
+			response = input('Type for "{0}" (1: APS1, 2: APS2, or 3: Tek5014): '.format(awg))
+			responsemap = {1: 'APSPattern', 2: 'APS2Pattern', 3: 'TekPattern'}
+			if response not in responsemap.keys():
+				raise NameError('Invalid resposne')
+			awgmap[awg] = responsemap[response]
+		for name in physChans:
+			ch = self.primaryDict[name]
+			ch['translator'] = awgmap[ch['AWG']]
 
 class SweepMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
