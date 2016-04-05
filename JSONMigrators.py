@@ -208,9 +208,9 @@ class ChannelMigrator(JSONMigrator):
 		awgmap = {}
 		for awg in AWGs:
 			response = input('Type for "{0}" (1: APS1, 2: APS2, or 3: Tek5014): '.format(awg))
-			responsemap = {1: 'APSPattern', 2: 'APS2Pattern', 3: 'TekPattern'}
+			responsemap = {'1': 'APSPattern', '2': 'APS2Pattern', '3': 'TekPattern'}
 			if response not in responsemap.keys():
-				raise NameError('Invalid resposne')
+				raise NameError('Invalid response: "%s" not one of %s' % (response, responsemap.keys()))
 			awgmap[awg] = responsemap[response]
 		for name in physChans:
 			ch = self.primaryDict[name]
