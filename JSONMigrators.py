@@ -238,11 +238,9 @@ class MeasurementMigrator(JSONMigrator):
 
 def migrate_all(config):
 	migrators = [IntrumentMigrator,
-	             ChannelMigrator,
 	             SweepMigrator,
 	             MeasurementMigrator]
 	configFiles = [config.instrumentLibFile,
-	               config.channelLibFile,
 				   config.sweepLibFile,
 				   config.measurementLibFile]
 	messages = []
