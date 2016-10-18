@@ -149,7 +149,7 @@ class ChannelMigrator(JSONMigrator):
 			filename,
 			'ChannelLibrary',
 			'channelDict',
-			4)
+			5)
 
 	def version_1_to_2(self):
 
@@ -215,6 +215,15 @@ class ChannelMigrator(JSONMigrator):
 		for name in physChans:
 			ch = self.primaryDict[name]
 			ch['translator'] = awgmap[ch['AWG']]
+
+	def version_4_to_5(self):
+		# 'AWG' property of PhysicalChannels renamed to 'instrument'
+		physChans = self.get_items_matching_class(['PhysicalQuadratureChannel', 'PhysicalMarkerChannel'])
+
+		for name in physChans:
+			ch = self.primaryDict[name]
+			ch['instrument'] = ch['AWG']
+			del ch['AWG']
 
 class SweepMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
