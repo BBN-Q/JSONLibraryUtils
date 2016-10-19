@@ -49,9 +49,9 @@ class LibraryDecoder(json.JSONDecoder):
 
             __import__(moduleName)
 
-            #Re-encode the strings as ascii (this should go away in Python 3)
-            jsonDict = {k.encode('ascii'):v for k,v in jsonDict.items()}
-
+            #Re-encode the strings as ascii for Python 2
+            if sys.version_info[0] < 3:
+                jsonDict = {k.encode('ascii'):v for k,v in jsonDict.items()}
             inst = getattr(sys.modules[moduleName], className)()
             if hasattr(inst, 'update_from_jsondict'):
                 inst.update_from_jsondict(jsonDict)
