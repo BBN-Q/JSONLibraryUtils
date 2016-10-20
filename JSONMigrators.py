@@ -7,6 +7,7 @@ Original author: Brian Donovan
 '''
 
 import json
+import re
 import itertools
 
 # Migrates json file versions using a version number
@@ -15,9 +16,33 @@ import itertools
 # Version 2+ change the structure of the files
 
 # to add migrations add version_{n}_to_{n+1} methods in the subclasses of JSONMigrator
-# currently  [IntrumentMigrator, ChannelMigrator,SweepMigrator, MeasurementMigrator]
+# currently  [InstrumentMigrator, ChannelMigrator,SweepMigrator, MeasurementMigrator]
 # to make the changes in the json dict
 
+first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+all_cap_re = re.compile('([a-z0-9])([A-Z])')
+def snakeify(name):
+	s1 = first_cap_re.sub(r'\1_\2', name)
+	return all_cap_re.sub(r'\1_\2', s1).lower()
+
+# Recursively re-label dictionary
+def rec_snakeify(dictionary, start_level=0, level=0):
+	new = {}
+	for k, v in dictionary.items():
+		if isinstance(v, dict):
+			v = rec_snakeify(v, start_level=start_level, level=level+1)
+		if level >= start_level:
+			new[snakeify(k)] = v
+		else:
+			new[k] = v
+	return new
+
+def strip_vendor_names(instr_name):
+	vns = ["Agilent", "Alazar", "Keysight", "Holzworth", "Yoko", "Yokogawa", "RhodeSchwarz"]
+	for vn in vns:
+		instr_name = instr_name.replace(vn, "")
+	return instr_name
+	
 class JSONMigrator(object):
 	""" Base class for the JSON Migration
 
@@ -45,7 +70,7 @@ class JSONMigrator(object):
 	def load(self):
 		try:
 			with open(self.fileName, 'r') as FID:
-			    self.jsonDict = json.load(FID)
+				self.jsonDict = json.load(FID)
 		except IOError:
 			print('json file {0} not found'.format(self.fileName))
 			self.jsonDict = None
@@ -109,14 +134,14 @@ class JSONMigrator(object):
 		# does nothing but bump version number
 		pass
 
-class IntrumentMigrator(JSONMigrator):
+class InstrumentMigrator(JSONMigrator):
 	""" Migrator for the Intrument Manager JSON File """
 	def __init__(self, filename):
-		super(IntrumentMigrator, self).__init__(
+		super(InstrumentMigrator, self).__init__(
 			filename,
 			"InstrumentLibrary",
 			"instrDict",
-			3)
+			4)
 
 	def version_1_to_2(self):
 
@@ -141,6 +166,13 @@ class IntrumentMigrator(JSONMigrator):
 				channel['rawKernel'] = ''
 				del channel['enableResultStream']
 				del channel['kernel']
+
+	def version_3_to_4(self):
+		# Migration step 3
+		# Convert to snake case
+		self.primaryDict = rec_snakeify(self.primaryDict, start_level=1)
+		for instr_name in self.primaryDict.keys():
+			self.primaryDict[instr_name]["x__class__"] = strip_vendor_names(self.primaryDict[instr_name]["x__class__"])
 
 class ChannelMigrator(JSONMigrator):
 	""" Migrator for the Channel Manager JSON File """
@@ -216,6 +248,11 @@ class ChannelMigrator(JSONMigrator):
 			ch = self.primaryDict[name]
 			ch['translator'] = awgmap[ch['AWG']]
 
+	def version_4_to_5(self):
+		# Migration step 4
+		# Convert to snake case
+		self.primaryDict = rec_snakeify(self.primaryDict)
+
 class SweepMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
 
@@ -226,6 +263,9 @@ class SweepMigrator(JSONMigrator):
 			"sweepDict",
 			1)
 
+	# def version_1_to_2(self):
+	# 	pass
+
 class MeasurementMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
 
@@ -234,12 +274,45 @@ class MeasurementMigrator(JSONMigrator):
 			filename,
 			"MeasFilterLibrary",
 			"filterDict",
-			1)
+			2)
+
+	def version_1_to_2(self):
+		# Convert to snake case
+		self.primaryDict = rec_snakeify(self.primaryDict, start_level=1)
+
+		for meas_name, meas in self.primaryDict.items():
+			print(meas.keys())
+			plot_mode         = self.primaryDict[meas_name].pop("plot_mode") if "plot_mode" in meas.keys() else None
+			plot_scope        = self.primaryDict[meas_name].pop("plot_scope") if "plot_scope" in meas.keys() else None
+			records_file_path = self.primaryDict[meas_name].pop("records_file_path") if "records_file_path" in meas.keys() else None
+			save_records      = self.primaryDict[meas_name].pop("save_records") if "save_records" in meas.keys() else None
+			saved             = self.primaryDict[meas_name].pop("saved") if "saved" in meas.keys() else None
+
+		value_changes = {"KernelIntegration": "KernelIntegrator",
+						 "DigitalDemod": "Channelizer",
+						 "RawStream": "AlazarStreamSelector"}
+		key_changes   = {"i_ffreq": "if_freq",
+						 "decim_factor1": "decim_factor_1",
+						 "decim_factor2": "decim_factor_2",
+						 "decim_factor3": "decim_factor_3"}
+
+		for meas_name in self.primaryDict.keys():
+			if self.primaryDict[meas_name]["x__class__"] in value_changes.keys():
+				self.primaryDict[meas_name]["x__class__"] = value_changes[self.primaryDict[meas_name]["x__class__"]]
+			for prop_name in self.primaryDict[meas_name].keys():
+				if prop_name in key_changes:
+					val = self.primaryDict[meas_name].pop(prop_name)
+					self.primaryDict[meas_name][key_changes[prop_name]] = val
+
+		# for meas_name, meas in self.primaryDict.items():
+		# 	if meas['x__class__'] == "RawStream":
+
+
 
 def migrate_all(config):
-	migrators = [IntrumentMigrator,
-	             SweepMigrator,
-	             MeasurementMigrator]
+	migrators = [InstrumentMigrator,
+				 SweepMigrator,
+				 MeasurementMigrator]
 	configFiles = [config.instrumentLibFile,
 				   config.sweepLibFile,
 				   config.measurementLibFile]
