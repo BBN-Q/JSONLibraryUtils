@@ -42,7 +42,7 @@ def strip_vendor_names(instr_name):
 	for vn in vns:
 		instr_name = instr_name.replace(vn, "")
 	return instr_name
-	
+
 class JSONMigrator(object):
 	""" Base class for the JSON Migration
 
@@ -247,11 +247,6 @@ class ChannelMigrator(JSONMigrator):
 		for name in physChans:
 			ch = self.primaryDict[name]
 			ch['translator'] = awgmap[ch['AWG']]
-
-	def version_4_to_5(self):
-		# Migration step 4
-		# Convert to snake case
-		self.primaryDict = rec_snakeify(self.primaryDict)
 
 class SweepMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
