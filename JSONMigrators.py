@@ -37,12 +37,6 @@ def rec_snakeify(dictionary, start_level=0, level=0):
 			new[k] = v
 	return new
 
-def strip_vendor_names(instr_name):
-	vns = ["Agilent", "Alazar", "Keysight", "Holzworth", "Yoko", "Yokogawa", "RhodeSchwarz"]
-	for vn in vns:
-		instr_name = instr_name.replace(vn, "")
-	return instr_name
-
 class JSONMigrator(object):
 	""" Base class for the JSON Migration
 
@@ -171,8 +165,19 @@ class InstrumentMigrator(JSONMigrator):
 		# Migration step 3
 		# Convert to snake case
 		self.primaryDict = rec_snakeify(self.primaryDict, start_level=1)
-		for instr_name in self.primaryDict.keys():
-			self.primaryDict[instr_name]["x__class__"] = strip_vendor_names(self.primaryDict[instr_name]["x__class__"])
+
+		# Change X6 digitizer_mode to acquire_mode to match alazar terminology
+		scopes = self.get_items_matching_class(['X6'])
+		for x6 in scopes:
+			self.primaryDict[x6]['acquire_mode'] = self.primaryDict[x6].pop('digitizer_mode')
+
+			# Remove the X6 channels, since they now appears as measurements...
+			x6_channels = self.primaryDict[x6].pop('channels')
+
+		# Yoko->Yokogawa
+		yokogawas = self.get_items_matching_class(['YokoGS200'])
+		for yokogawa in yokogawas:
+			self.primaryDict[yokogawa]["x__class__"] = "YokogawaGS200"
 
 class ChannelMigrator(JSONMigrator):
 	""" Migrator for the Channel Manager JSON File """
@@ -299,8 +304,9 @@ class MeasurementMigrator(JSONMigrator):
 					val = self.primaryDict[meas_name].pop(prop_name)
 					self.primaryDict[meas_name][key_changes[prop_name]] = val
 
-		# for meas_name, meas in self.primaryDict.items():
-		# 	if meas['x__class__'] == "RawStream":
+		alazar_streams = self.get_items_matching_class("AlazarStreamSelector")
+		for als in alazar_streams:
+			self.primaryDict[als]['channel'] = int(self.primaryDict[als]['channel'])
 
 
 
