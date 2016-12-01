@@ -274,7 +274,7 @@ class MeasurementMigrator(JSONMigrator):
 			filename,
 			"MeasFilterLibrary",
 			"filterDict",
-			2)
+			3)
 
 	def version_1_to_2(self):
 		# Convert to snake case
@@ -308,7 +308,14 @@ class MeasurementMigrator(JSONMigrator):
 		for als in alazar_streams:
 			self.primaryDict[als]['channel'] = int(self.primaryDict[als]['channel'])
 
-
+	def version_2_to_3(self):
+		# simplified X6 streams
+		x6_streams = self.get_items_matching_class("X6StreamSelector")
+		for s in x6_streams:
+			self.primaryDict[s]['kernel'] = self.primaryDict[s].pop('raw_kernel')
+			self.primaryDict[s]['kernel_bias'] = self.primaryDict[s].pop('raw_kernel_bias')
+			del self.primaryDict[s]['demod_kernel']
+			del self.primaryDict[s]['demod_kernel_bias']
 
 def migrate_all(config):
 	migrators = [InstrumentMigrator,
