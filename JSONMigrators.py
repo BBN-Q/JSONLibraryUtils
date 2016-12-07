@@ -274,7 +274,7 @@ class MeasurementMigrator(JSONMigrator):
 			filename,
 			"MeasFilterLibrary",
 			"filterDict",
-			3)
+			4)
 
 	def version_1_to_2(self):
 		# Convert to snake case
@@ -291,10 +291,10 @@ class MeasurementMigrator(JSONMigrator):
 		value_changes = {"KernelIntegration": "KernelIntegrator",
 						 "DigitalDemod": "Channelizer",
 						 "RawStream": "AlazarStreamSelector"}
-		key_changes   = {"i_ffreq": "if_freq",
-						 "decim_factor1": "decim_factor_1",
-						 "decim_factor2": "decim_factor_2",
-						 "decim_factor3": "decim_factor_3"}
+		key_changes   = {"IFfreq": "if_freq",
+						 "decimFactor1": "decim_factor_1",
+						 "decimFactor2": "decim_factor_2",
+						 "decimFactor3": "decim_factor_3"}
 
 		for meas_name in self.primaryDict.keys():
 			if self.primaryDict[meas_name]["x__class__"] in value_changes.keys():
@@ -316,6 +316,22 @@ class MeasurementMigrator(JSONMigrator):
 			self.primaryDict[s]['kernel_bias'] = self.primaryDict[s].pop('raw_kernel_bias')
 			del self.primaryDict[s]['demod_kernel']
 			del self.primaryDict[s]['demod_kernel_bias']
+
+	def version_3_to_4(self):
+		channelizers = self.get_items_matching_class("Channelizer")
+		for ch in channelizers:
+			self.primaryDict[ch]['frequency'] = self.primaryDict[ch].pop('if_freq')
+			decim_factor = (self.primaryDict[ch].pop('decim_factor_1') *
+				            self.primaryDict[ch].pop('decim_factor_2') *
+						    self.primaryDict[ch].pop('decim_factor_3'))
+			self.primaryDict[ch]['decimation_factor'] = decim_factor
+			del self.primaryDict[ch]['sampling_rate']
+			del self.primaryDict[ch]['phase']
+
+		integators = self.get_items_matching_class("KernelIntegrator")
+		for item in integators:
+			self.primaryDict[item]['frequency'] = self.primaryDict[item].pop('if_freq')
+			del self.primaryDict[item]['sampling_rate']
 
 def migrate_all(config):
 	migrators = [InstrumentMigrator,
