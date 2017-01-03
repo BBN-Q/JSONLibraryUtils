@@ -261,10 +261,17 @@ class SweepMigrator(JSONMigrator):
 			filename,
 			"SweepLibrary",
 			"sweepDict",
-			1)
+			2)
 
-	# def version_1_to_2(self):
-	# 	pass
+	def version_1_to_2(self):
+		# SegmentNum and SegmentNumWithCals modified too substantially to auto-migrate
+		# so, just remove them.
+		segnums = self.get_items_matching_class(['SegmentNum', 'SegmentNumWithCals'])
+
+		for sweep in segnums:
+			del self.primaryDict[sweep]
+			if sweep in self.jsonDict['sweepOrder']:
+				self.jsonDict['sweepOrder'].remove(sweep)
 
 class MeasurementMigrator(JSONMigrator):
 	""" Migrator for the Sweeps JSON File """
